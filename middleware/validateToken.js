@@ -1,7 +1,6 @@
-const {TOKEN} = require('./../config');
+const {TOKEN} = require( './../config' );
 
 function validateToken( req, res, next ){
-    console.log(TOKEN);
 
     let token = req.headers.authorization;
 
