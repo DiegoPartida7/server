@@ -1,11 +1,19 @@
 const express = require( 'express' );
 const bodyParser = require( 'body-parser' );
 const morgan = require( 'morgan' );
-
+const mongoose = require( 'mongoose' );
+const cors = require('./middleware/cors');
+const validateToken = require( './middleware/validateToken' );
+const { Students } = require( './studentModel' );
+const {DATABASE_URL,PORT} = require ('./config');
 const app = express();
+app.use( cors );
 const jsonParser = bodyParser.json();
+app.use(express.static("public"));
 
 app.use( morgan( 'dev' ) );
+app.use( validateToken );
+
 
 let listOfStudents = [
     {
@@ -29,7 +37,16 @@ let listOfStudents = [
 app.get( '/api/students', ( req, res ) => {
     console.log( "Getting all students." );
 
-    return res.status( 200 ).json( listOfStudents );
+    Students
+        .getAllStudents()
+        .then( result => {
+            return res.status( 200 ).json( result );
+        })
+        .catch( err => {
+            res.statusMessage = "Something is wrong with the Database. Try again later.";
+            return res.status( 500 ).end();
+        })
+
 });
 
 app.get( '/api/studentById', ( req, res ) => {
@@ -95,25 +112,23 @@ app.post( '/api/createStudent', jsonParser, ( req, res ) => {
         return res.status( 409 ).end();
     }
     
-    let flag = true;
+    let newStudent = { name, id };
 
-    for( let i = 0; i < listOfStudents.length; i ++ ){
-        if( listOfStudents[i].id === id ){
-            flag = !flag;
-            break;
-        }
-    }
-
-    if( flag ){
-        let newStudent = { name, id };
-        listOfStudents.push( newStudent );
-
-        return res.status( 201 ).json( newStudent ); 
-    }
-    else{
-        res.statusMessage = "The 'id' is already on the student list.";
-        return res.status( 409 ).end();
-    }
+    Students
+        .createStudent( newStudent )
+        .then( result => {
+            // Handle id duplicate error
+            if( result.errmsg ){
+                res.statusMessage = "The 'id' belongs to another student. " +
+                                    result.errmsg;
+                return res.status( 409 ).end();
+            }
+            return res.status( 201 ).json( result ); 
+        })
+        .catch( err => {
+            res.statusMessage = "Something is wrong with the Database. Try again later.";
+            return res.status( 500 ).end();
+        });
 });
 
 app.delete( '/api/removeStudent', ( req, res ) => {
@@ -140,8 +155,29 @@ app.delete( '/api/removeStudent', ( req, res ) => {
     return res.status( 204 ).end();
 });
 
-app.listen( 8080, () => {
+app.listen( PORT, () => {
     console.log( "This server is running on port 8080" );
+
+    new Promise( ( resolve, reject ) => {
+
+        const settings = {
+            useNewUrlParser: true, 
+            useUnifiedTopology: true, 
+            useCreateIndex: true
+        };
+        mongoose.connect(DATABASE_URL, settings, ( err ) => {
+            if( err ){
+                return reject( err );
+            }
+            else{
+                console.log( "Database connected successfully." );
+                return resolve();
+            }
+        })
+    })
+    .catch( err => {
+        console.log( err );
+    });
 });
 
 
@@ -149,3 +185,11 @@ app.listen( 8080, () => {
 // GET endpoint : http://localhost:8080/api/students
 // GET by id in query : http://localhost:8080/api/studentById?id=123
 // GET by id in param : http://localhost:8080/api/getStudentById/123
+
+
+// Run mongo server
+// brew services start mongodb-community
+// mongod
+
+// Use the mongo shell
+// mongo
