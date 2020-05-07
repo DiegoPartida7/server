@@ -4,7 +4,7 @@ const morgan = require( 'morgan' );
 const mongoose = require( 'mongoose' );
 const validateToken = require( './middleware/validateToken' );
 const cors = require( './middleware/cors' );
-const { Students } = require( './models/studentModel' );
+const { Students } = require( './studentModel' );
 const {DATABASE_URL, PORT} = require( './config' );
 
 const app = express();
