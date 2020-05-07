@@ -4,7 +4,7 @@ function watchStudentsForm(){
     let settings = {
         method : 'GET',
         headers : {
-            Authorization : `Bearer ${API_TOKEN}`
+            Authorization : `Bearer ${TOKEN}`
         }
     }
     let results = document.querySelector('.results');
