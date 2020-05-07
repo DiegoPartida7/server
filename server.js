@@ -2,18 +2,18 @@ const express = require( 'express' );
 const bodyParser = require( 'body-parser' );
 const morgan = require( 'morgan' );
 const mongoose = require( 'mongoose' );
-const cors = require('./middleware/cors');
 const validateToken = require( './middleware/validateToken' );
-const { Students } = require( './studentModel' );
-const {DATABASE_URL,PORT} = require ('./config');
-const app = express();
-app.use( cors );
-const jsonParser = bodyParser.json();
-app.use(express.static("public"));
+const cors = require( './middleware/cors' );
+const { Students } = require( './models/studentModel' );
+const {DATABASE_URL, PORT} = require( './config' );
 
+const app = express();
+const jsonParser = bodyParser.json();
+
+app.use( cors );
+app.use( express.static( "public" ) );
 app.use( morgan( 'dev' ) );
 app.use( validateToken );
-
 
 let listOfStudents = [
     {
@@ -126,7 +126,8 @@ app.post( '/api/createStudent', jsonParser, ( req, res ) => {
             return res.status( 201 ).json( result ); 
         })
         .catch( err => {
-            res.statusMessage = "Something is wrong with the Database. Try again later.";
+            res.statusMessage = "Something is wrong with the Database. Try again later. " +
+                                 err.message;
             return res.status( 500 ).end();
         });
 });
@@ -165,7 +166,7 @@ app.listen( PORT, () => {
             useUnifiedTopology: true, 
             useCreateIndex: true
         };
-        mongoose.connect(DATABASE_URL, settings, ( err ) => {
+        mongoose.connect( DATABASE_URL, settings, ( err ) => {
             if( err ){
                 return reject( err );
             }
@@ -193,3 +194,6 @@ app.listen( PORT, () => {
 
 // Use the mongo shell
 // mongo
+
+
+
